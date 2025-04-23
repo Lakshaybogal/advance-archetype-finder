@@ -27,6 +27,7 @@ import {
   Shield,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { renderArchetypeDetails } from "@/components/result/resultRendering";
 
 const ARCHETYPE_MAP = {
   Sage: 0,
@@ -74,6 +75,11 @@ export default function ArchetypeQuiz() {
   const [answers, setAnswers] = useState<number[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [results, setResults] = useState<string[]>([]);
+  // Track which tab is active
+  const [selectedTab, setSelectedTab] = useState<
+    "primary" | "secondary" | "tertiary"
+  >("primary");
+
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -189,7 +195,7 @@ export default function ArchetypeQuiz() {
           Select your current status to begin the journey
         </CardDescription>
       </CardHeader>
-      <CardContent className='grid gap-6 md:grid-cols-3 p-6'>
+      <CardContent className='grid gap-6 md:grid-cols-3 sm:grid-cols-1 p-6'>
         <Button
           variant='outline'
           className='h-32 flex flex-col gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all'
@@ -223,7 +229,7 @@ export default function ArchetypeQuiz() {
           Choose your current grade level
         </CardDescription>
       </CardHeader>
-      <CardContent className='grid gap-6 md:grid-cols-3 p-6'>
+      <CardContent className='grid gap-6 md:grid-cols-3 sm:grid-cols-1 p-6'>
         <Button
           variant='outline'
           className='h-24 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all'
@@ -319,242 +325,121 @@ export default function ArchetypeQuiz() {
     );
   };
 
-  const renderResults = () => (
-    <div className='w-full max-w-4xl mx-auto space-y-6'>
-      <Card>
-        <CardHeader className='text-center'>
-          <CardTitle className='text-3xl font-bold'>
-            Your Archetype Results
-          </CardTitle>
-          <CardDescription className='text-lg mt-2'>
-            Based on your answers, we've identified your primary archetypes
-          </CardDescription>
-        </CardHeader>
-        <CardContent className='p-6'>
-          <div className='grid gap-6 md:grid-cols-3'>
-            {results.map((archetype, index) => {
-              const archetypeInfo =
-                ARCHETYPE_DESCRIPTIONS[
-                  archetype as keyof typeof ARCHETYPE_DESCRIPTIONS
-                ];
-              return (
-                <Card
-                  key={archetype}
-                  className={`overflow-hidden border-2 ${
-                    index === 0 ? "border-yellow-400" : ""
-                  }`}>
-                  <div
-                    className={`p-4 ${
-                      index === 0
-                        ? "bg-yellow-50 dark:bg-yellow-950/20"
-                        : "bg-slate-50 dark:bg-slate-800/50"
-                    }`}>
-                    <div className='flex items-center gap-3'>
-                      {index === 0 ? (
-                        <Trophy className='h-6 w-6 text-yellow-600' />
-                      ) : index === 1 ? (
-                        <Shield className='h-6 w-6 text-slate-600' />
-                      ) : (
-                        <Lightbulb className='h-6 w-6 text-slate-600' />
-                      )}
-                      <div>
-                        <h3 className='font-bold text-lg'>
-                          {archetypeInfo.name}
-                        </h3>
-                        <p className='text-sm text-slate-600 dark:text-slate-400'>
-                          {index === 0
-                            ? "Primary"
-                            : index === 1
-                            ? "Secondary"
-                            : "Tertiary"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <CardContent className='p-4'>
-                    <p className='text-sm'>{archetypeInfo.description}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+  const renderResults = () => {
+    // Map each tab value to the index in `results`
+    const indexMap = { primary: 0, secondary: 1, tertiary: 2 } as const;
+    const activeIndex = indexMap[selectedTab];
+    const activeKey = results[
+      activeIndex
+    ] as keyof typeof ARCHETYPE_DESCRIPTIONS;
+    const activeInfo = ARCHETYPE_DESCRIPTIONS[activeKey];
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Primary Archetype:{" "}
-            {
-              ARCHETYPE_DESCRIPTIONS[
-                results[0] as keyof typeof ARCHETYPE_DESCRIPTIONS
-              ]?.name
+    return (
+      <div className='w-full max-w-4xl mx-auto space-y-6 h-full'>
+        <Tabs
+          value={selectedTab}
+          onValueChange={(val) => setSelectedTab(val as any)}
+          className='w-full flex flex-col '>
+          {/* Top header */}
+          <Card className=''>
+            <CardHeader className='text-center'>
+              <CardTitle className='text-3xl font-bold'>
+                Your Archetype Results
+              </CardTitle>
+              <CardDescription className='text-lg mt-2'>
+                Based on your answers, we've identified your primary archetypes.
+              </CardDescription>
+            </CardHeader>
+
+            {/* Tab triggers */}
+            <CardContent className='md:p-6 px-2 py-4 md:mb-12 w-full flex justify-center items-center'>
+              <TabsList className='grid gap-2 md:gap-6 grid-cols-3  '>
+                {results.map((arch, idx) => {
+                  const value =
+                    idx === 0
+                      ? "primary"
+                      : idx === 1
+                      ? "secondary"
+                      : "tertiary";
+                  const info =
+                    ARCHETYPE_DESCRIPTIONS[
+                      arch as keyof typeof ARCHETYPE_DESCRIPTIONS
+                    ];
+                  const isActive = selectedTab === value;
+
+                  return (
+                    <TabsTrigger
+                      key={value}
+                      value={value}
+                      className={`
+            flex flex-col justify-between
+            border-2 rounded-md md:p-4 p-1
+            transition-shadow
+            ${
+              isActive
+                ? "border-yellow-400 shadow-lg bg-yellow-50 dark:bg-yellow-950/20"
+                : "border-slate-300 hover:shadow hover:bg-slate-50 dark:hover:bg-slate-800/50"
             }
-          </CardTitle>
-          <CardDescription>
-            Detailed information about your dominant archetype
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue='overview' className='w-full'>
-            <TabsList className='grid w-full grid-cols-4'>
-              <TabsTrigger value='overview'>Overview</TabsTrigger>
-              <TabsTrigger value='desire'>Traits</TabsTrigger>
-              <TabsTrigger value='strengths'>Strengths</TabsTrigger>
-              <TabsTrigger value='weaknesses'>Challenges</TabsTrigger>
-              <TabsTrigger value='desire'>Desire</TabsTrigger>
-              <TabsTrigger value='fears'>Fears</TabsTrigger>
-              <TabsTrigger value='clashes'>Clashes</TabsTrigger>
-              <TabsTrigger value='connects'>Connects</TabsTrigger>
-            </TabsList>
-            <TabsContent value='overview' className='p-4'>
-              <p>
-                {
-                  ARCHETYPE_DESCRIPTIONS[
-                    results[0] as keyof typeof ARCHETYPE_DESCRIPTIONS
-                  ]?.description
-                }
-              </p>
-            </TabsContent>
-            <TabsContent value='strengths' className='p-4'>
-              <div className='flex flex-wrap gap-2'>
-                <Badge
-                  variant='outline'
-                  className='bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100'>
-                  {
-                    ARCHETYPE_DESCRIPTIONS[
-                      results[0] as keyof typeof ARCHETYPE_DESCRIPTIONS
-                    ]?.strengths
-                  }
-                </Badge>
-              </div>
-            </TabsContent>
-            <TabsContent value='weaknesses' className='p-4'>
-              <div className='flex flex-wrap gap-2'>
-                <Badge
-                  variant='outline'
-                  className='bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100'>
-                  {
-                    ARCHETYPE_DESCRIPTIONS[
-                      results[0] as keyof typeof ARCHETYPE_DESCRIPTIONS
-                    ]?.weaknesses
-                  }
-                </Badge>
-              </div>
-            </TabsContent>
-            <TabsContent value='desire' className='p-4'>
-              <div className='border-l-4 border-primary pl-4 italic'>
-                {
-                  ARCHETYPE_DESCRIPTIONS[
-                    results[0] as keyof typeof ARCHETYPE_DESCRIPTIONS
-                  ]?.desire
-                }
-              </div>
-            </TabsContent>
-            <TabsContent value='fears' className='p-4'>
-              <div className='border-l-4 border-primary pl-4 italic'>
-                {
-                  ARCHETYPE_DESCRIPTIONS[
-                    results[0] as keyof typeof ARCHETYPE_DESCRIPTIONS
-                  ]?.fear
-                }
-              </div>
-            </TabsContent>
-            <TabsContent value='clashes' className='p-4'>
-              <div className='border-l-4 border-primary pl-4 italic'>
-                {
-                  ARCHETYPE_DESCRIPTIONS[
-                    results[0] as keyof typeof ARCHETYPE_DESCRIPTIONS
-                  ]?.clashes
-                }
-              </div>
-            </TabsContent>
-            <TabsContent value='connects' className='p-4'>
-              <div className='border-l-4 border-primary pl-4 italic'>
-                {
-                  ARCHETYPE_DESCRIPTIONS[
-                    results[0] as keyof typeof ARCHETYPE_DESCRIPTIONS
-                  ]?.connects
-                }
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+          `}>
+                      <div className='flex items-center md:gap-3 gap-1 '>
+                        {idx === 0 ? (
+                          <Trophy className='h-6 w-6 text-yellow-600' />
+                        ) : idx === 1 ? (
+                          <Shield className='h-6 w-6 text-slate-600' />
+                        ) : (
+                          <Lightbulb className='h-6 w-6 text-yellow-800' />
+                        )}
+                        <h3 className='font-bold md:text-lg'>{info.name}</h3>
+                      </div>
+                      <p className='text-sm text-slate-600 dark:text-slate-400 mt-2'>
+                        {idx === 0
+                          ? "Primary"
+                          : idx === 1
+                          ? "Secondary"
+                          : "Tertiary"}
+                      </p>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+            </CardContent>
+          </Card>
+          {/* Dynamic header based on selectedTab */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {selectedTab.charAt(0).toUpperCase() + selectedTab.slice(1)}{" "}
+                Archetype: {activeInfo?.name}
+              </CardTitle>
+              <CardDescription>
+                Detailed information about your {selectedTab.toLowerCase()}{" "}
+                archetype
+              </CardDescription>
+            </CardHeader>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Archetype Combination</CardTitle>
-          <CardDescription>How your archetypes work together</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className='mb-4'>
-            Your unique combination of{" "}
-            {results.map((r, i) => (
-              <span key={r}>
-                {i > 0 && i === results.length - 1
-                  ? " and "
-                  : i > 0
-                  ? ", "
-                  : ""}
-                <span className='font-medium'>
-                  {
-                    ARCHETYPE_DESCRIPTIONS[
-                      r as keyof typeof ARCHETYPE_DESCRIPTIONS
-                    ]?.name
-                  }
-                </span>
-              </span>
-            ))}{" "}
-            creates a powerful blend of qualities that shape how you interact
-            with the world.
-          </p>
-          <p>
-            As a{" "}
-            <span className='font-medium'>
-              {
-                ARCHETYPE_DESCRIPTIONS[
-                  results[0] as keyof typeof ARCHETYPE_DESCRIPTIONS
-                ]?.name
-              }
-            </span>{" "}
-            with{" "}
-            <span className='font-medium'>
-              {
-                ARCHETYPE_DESCRIPTIONS[
-                  results[1] as keyof typeof ARCHETYPE_DESCRIPTIONS
-                ]?.name
-              }
-            </span>{" "}
-            and{" "}
-            <span className='font-medium'>
-              {
-                ARCHETYPE_DESCRIPTIONS[
-                  results[2] as keyof typeof ARCHETYPE_DESCRIPTIONS
-                ]?.name
-              }
-            </span>{" "}
-            influences, you bring a unique perspective that combines{" "}
-            {ARCHETYPE_DESCRIPTIONS[
-              results[0] as keyof typeof ARCHETYPE_DESCRIPTIONS
-            ]?.strengths[0].toLowerCase()}
-            ,{" "}
-            {ARCHETYPE_DESCRIPTIONS[
-              results[1] as keyof typeof ARCHETYPE_DESCRIPTIONS
-            ]?.strengths[0].toLowerCase()}
-            , and{" "}
-            {ARCHETYPE_DESCRIPTIONS[
-              results[2] as keyof typeof ARCHETYPE_DESCRIPTIONS
-            ]?.strengths[0].toLowerCase()}
-            .
-          </p>
-        </CardContent>
-        <CardFooter className='flex justify-center p-6'>
-          <Button onClick={resetQuiz}>Take Quiz Again</Button>
-        </CardFooter>
-      </Card>
-    </div>
-  );
+            {/* Panels */}
+            <CardContent>
+              <TabsContent value='primary'>
+                {renderArchetypeDetails(results[0])}
+              </TabsContent>
+              <TabsContent value='secondary'>
+                {renderArchetypeDetails(results[1])}
+              </TabsContent>
+              <TabsContent value='tertiary'>
+                {renderArchetypeDetails(results[2])}
+              </TabsContent>
+            </CardContent>
+          </Card>
+        </Tabs>
+
+        <Card>
+          <CardFooter className='flex justify-center p-6'>
+            <Button onClick={resetQuiz}>Take Quiz Again</Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
